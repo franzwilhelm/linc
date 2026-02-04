@@ -1,0 +1,6 @@
+# Binary
+linc
+*.exe
+
+# GoReleaser
+dist/
