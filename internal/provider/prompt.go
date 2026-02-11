@@ -101,7 +101,8 @@ func buildPromptInternal(issue linear.Issue, comment string, ctx *linear.IssueCo
 	sb.WriteString("\nWith Linear MCP, you can: update issue status, add comments, create sub-issues, query related issues, and more.\n")
 
 	sb.WriteString("\n---\n")
-	sb.WriteString("Please help me implement this ticket. Start by understanding the requirements and exploring the codebase if needed.")
+	sb.WriteString("Please help me implement this ticket. Start by understanding the requirements and exploring the codebase if needed.\n\n")
+	sb.WriteString(fmt.Sprintf("**Important**: When you make the commit that resolves this issue, include `Fixes %s` in the commit message so Linear automatically marks it as done.", issue.Identifier))
 
 	return sb.String()
 }
