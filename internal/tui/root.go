@@ -15,7 +15,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var Version = "dev"
+var Version = "dev" // Set from main via SetVersion
 
 type View int
 

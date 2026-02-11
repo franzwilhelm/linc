@@ -75,6 +75,9 @@ func main() {
 	// Create Linear client
 	client := linear.NewClient(ws.APIKey)
 
+	// Pass version to TUI
+	tui.Version = version
+
 	// Create and run TUI (loop to handle add-workspace flow)
 	for {
 		model := tui.NewRootModel(client, cfg, ws, cfg.Workspaces, currentDir, registry.List())
