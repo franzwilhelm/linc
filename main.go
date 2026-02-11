@@ -75,18 +75,35 @@ func main() {
 	// Create Linear client
 	client := linear.NewClient(ws.APIKey)
 
-	// Create and run TUI
-	model := tui.NewRootModel(client, cfg, ws, cfg.Workspaces, currentDir, registry.List())
-	p := tea.NewProgram(model)
+	// Create and run TUI (loop to handle add-workspace flow)
+	for {
+		model := tui.NewRootModel(client, cfg, ws, cfg.Workspaces, currentDir, registry.List())
+		p := tea.NewProgram(model)
 
-	finalModel, err := p.Run()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
-	}
+		finalModel, err := p.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
 
-	// Check if we need to start an agent
-	if rootModel, ok := finalModel.(tui.RootModel); ok {
+		rootModel, ok := finalModel.(tui.RootModel)
+		if !ok {
+			return
+		}
+
+		// Handle add new workspace: run auth flow, then restart TUI
+		if rootModel.ShouldAddNewWorkspace() {
+			newWs, err := addNewWorkspace(cfg, currentDir)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			ws = newWs
+			client = linear.NewClient(ws.APIKey)
+			continue
+		}
+
+		// Check if we need to start an agent
 		if startMsg := rootModel.ShouldStartClaude(); startMsg != nil {
 			// Checkout only mode - just checkout branch and exit
 			if startMsg.CheckoutOnly {
@@ -136,7 +153,22 @@ func main() {
 				os.Exit(1)
 			}
 		}
+
+		// Normal exit
+		return
 	}
+}
+
+func addNewWorkspace(cfg *config.Config, currentDir string) (*config.Workspace, error) {
+	fetchInfo := func(apiKey string) (*auth.WorkspaceInfo, error) {
+		id, name, err := linear.FetchWorkspaceInfo(apiKey)
+		if err != nil {
+			return nil, err
+		}
+		return &auth.WorkspaceInfo{ID: id, Name: name}, nil
+	}
+
+	return auth.PromptForNewWorkspace(cfg, currentDir, fetchInfo)
 }
 
 func prepareLinearIssue(client *linear.Client, startMsg *messages.StartClaudeMsg) {

@@ -47,6 +47,7 @@ type RootModel struct {
 	err             error
 	quitting        bool
 	startClaude     *messages.StartClaudeMsg
+	addNewWorkspace bool
 }
 
 func NewRootModel(client *linear.Client, cfg *config.Config, workspace *config.Workspace, workspaces []config.Workspace, currentDir string, providers []string) RootModel {
@@ -262,6 +263,7 @@ func (m RootModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case views.WorkspaceSelectedMsg:
 		if msg.AddNew {
+			m.addNewWorkspace = true
 			m.quitting = true
 			return m, tea.Quit
 		}
@@ -417,6 +419,10 @@ func (m RootModel) View() string {
 
 func (m RootModel) ShouldStartClaude() *messages.StartClaudeMsg {
 	return m.startClaude
+}
+
+func (m RootModel) ShouldAddNewWorkspace() bool {
+	return m.addNewWorkspace
 }
 
 func openBrowser(url string) {
