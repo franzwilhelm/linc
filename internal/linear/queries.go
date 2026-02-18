@@ -246,6 +246,7 @@ func (c *Client) GetTeamStates(teamID string) ([]State, error) {
 	}
 
 	var activeStates []State
+	var completedStates []State
 	var canceledStates []State
 	for _, node := range result.Team.States.Nodes {
 		state := State{
@@ -257,28 +258,27 @@ func (c *Client) GetTeamStates(teamID string) ([]State, error) {
 		}
 		if node.Type == "canceled" {
 			canceledStates = append(canceledStates, state)
-		} else if node.Type != "completed" {
+		} else if node.Type == "completed" {
+			completedStates = append(completedStates, state)
+		} else {
 			activeStates = append(activeStates, state)
 		}
 	}
 
-	for i := 0; i < len(activeStates)-1; i++ {
-		for j := i + 1; j < len(activeStates); j++ {
-			if activeStates[i].Position > activeStates[j].Position {
-				activeStates[i], activeStates[j] = activeStates[j], activeStates[i]
+	sort := func(states []State) {
+		for i := 0; i < len(states)-1; i++ {
+			for j := i + 1; j < len(states); j++ {
+				if states[i].Position > states[j].Position {
+					states[i], states[j] = states[j], states[i]
+				}
 			}
 		}
 	}
+	sort(activeStates)
+	sort(completedStates)
+	sort(canceledStates)
 
-	for i := 0; i < len(canceledStates)-1; i++ {
-		for j := i + 1; j < len(canceledStates); j++ {
-			if canceledStates[i].Position > canceledStates[j].Position {
-				canceledStates[i], canceledStates[j] = canceledStates[j], canceledStates[i]
-			}
-		}
-	}
-
-	return append(activeStates, canceledStates...), nil
+	return append(append(activeStates, completedStates...), canceledStates...), nil
 }
 
 func (c *Client) GetAssignedIssues(teamID string) ([]Issue, error) {
